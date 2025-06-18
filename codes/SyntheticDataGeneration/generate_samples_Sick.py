@@ -14,14 +14,14 @@ openai_key = "Your-OpenAI-Key"
 params = {
     "openai_key":openai_key,
     "model":"gpt-3.5-turbo-16k-0613",
-    "DATA_NAME":"Sick",
+    "DATA_NAME":"NIST",
     "TARGET":"Class",
     "N_CLASS":2,
     "N_SAMPLES_PER_CLASS":15,
     "N_SET":4,
     "USE_RANDOM_WORD":True,
     "N_BATCH":20,
-    "MODEL_NAME":"Sick_STPrompt_New",
+    "MODEL_NAME":"NIST_STPrompt_New",
     "N_TARGET_SAMPLES":1000,
 }
 
@@ -53,13 +53,21 @@ y_train = pd.read_csv(os.path.join(REAL_DATA_SAVE_DIR, f'y_train.csv'), index_co
 data = pd.concat((y_train, X_train),axis=1)
 
 # Sick dataset
-CATEGORICAL_FEATURES = ['sex', 'on_thyroxine', 'query_on_thyroxine', 
-                        'on_antithyroid_medication', 'sick', 'pregnant', 
-                        'thyroid_surgery', 'I131_treatment', 'query_hypothyroid', 
-                        'query_hyperthyroid', 'lithium', 'goitre', 'tumor', 
-                        'hypopituitary', 'psych', 'TSH_measured', 'T3_measured', 
-                        'TT4_measured', 'T4U_measured', 'FTI_measured', 
-                        'referral_source', 'Class']
+CATEGORICAL_FEATURES = [
+    'flagged_status',             # binary flag
+    'user_bin_score',            # discretized/categorized group
+    'account_type',              # encoded type/category
+    'membership_flag',           # binary premium/basic
+    'loyalty_tier',              # tiered category
+    'reported_fraud_flag',       # binary fraud label
+    'high_risk_flag',            # binary high-risk signal
+    'rule_alert_flag',           # binary alert trigger
+    'device_consistency_flag',   # binary device use flag
+    'education_level',           # encoded category
+    'gender_flag',               # binary gender
+    'employment_status'          # employment category
+]
+
 NAME_COLS = ','.join(data.columns) + '\n'    
 unique_categorical_features=get_unique_features(data, CATEGORICAL_FEATURES)
 unique_categorical_features['Class'] =['sick', 'negative']
@@ -106,15 +114,32 @@ if params['USE_RANDOM_WORD']:
         
         
 # make prompt template
-initial_prompt="""Class: hypothyroidism is a condition in which the thyroid gland is underperforming or producing too little thyroid hormone,
-age: the age of an patient,
-sex: the biological sex of an patient,
-TSH: thyroid stimulating hormone,
-T3: triiodothyronine hormone,
-TT4: total levothyroxine hormone,
-T4U: levothyroxine hormone uptake,
-FTI: free levothyroxine hormone index,
-referral_source: institution that supplied the thyroid disease record.\n\n
+initial_prompt="""record_id: unique identifier for the individual record (e.g., patient ID or customer ID),
+risk_score: risk score or probability estimate for a certain outcome such as default or fraud,
+event_count: number of abnormal events or error counts (e.g., failed login attempts or alerts),
+total_usage: total amount of activity or usage, such as transaction value or resource consumption,
+flagged_status: binary indicator showing whether the record was flagged for special review,
+user_bin_score: capped or discretized score used to categorize users into predefined groups,
+days_since_activity: number of days since the last recorded activity or transaction,
+account_type: encoded value representing the type or category of account associated with the record,
+months_since_update: number of months since the account was last updated or modified,
+membership_flag: binary indicator representing membership level (e.g., premium vs basic),
+loyalty_tier: rating or rank in a customer loyalty or rewards system,
+satisfaction_score: satisfaction rating typically measured on a 10-point scale,
+reported_fraud_flag: binary indicator for whether the record is associated with a known fraud event,
+account_balance: monetary value representing the account's current balance or total exposure,
+num_transactions: total number of past transactions or related financial operations,
+high_risk_flag: binary indicator signaling whether the account or user is considered high risk,
+account_age_years: total length of the account’s history in years,
+stability_rank: ordinal ranking reflecting behavioral stability or risk trends,
+rule_alert_flag: binary indicator triggered by predefined business or fraud detection rules,
+violation_count: number of observed policy violations or risk-related infractions,
+device_consistency_flag: binary indicator of whether the same device or channel was consistently used,
+education_level: encoded variable reflecting the individual’s education category,
+gender_flag: binary indicator of the individual’s reported gender,
+employment_status: encoded variable denoting current employment status (e.g., employed, retired),
+recent_alerts: number of recent alerts or unusual activities detected on the account,
+weeks_since_account_open: number of weeks since the account was first opened or activated.
 """
 
 numbering=['A','B','C','D']
